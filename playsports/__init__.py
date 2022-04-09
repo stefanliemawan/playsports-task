@@ -1,6 +1,7 @@
 import os
 import requests
 from flask import Flask, request, send_from_directory, url_for
+from os.path import join, dirname, realpath
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -36,14 +37,19 @@ def create_app(test_config=None):
     def searchVideos():
         youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
-        # send_from_directory("xx","/static/search_filter")
+        search_filter_path = os.path.join(app.static_folder, "search_filter")
         
+        with open(search_filter_path,"r") as f:
+            search_filter = f.read()
+            search_filter = search_filter.replace("\n","|")
+
         search_response = youtube.search().list(
-            q="",
+            q=search_filter,
             type="video",
             part="snippet",
-            maxResults=10
+            maxResults=50
         ).execute()
+        
         items = search_response["items"]
         
         if not items:
