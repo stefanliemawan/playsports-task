@@ -9,6 +9,10 @@ GET http://localhost:5000/videos HTTP/1.1
 
 ###
 
+GET http://localhost:5000/videos?q=Adam HTTP/1.1
+
+###
+
 GET http://localhost:5000/videos/1 HTTP/1.1
 
 ###
