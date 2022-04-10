@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from . import db
 
 from googleapiclient.discovery import build
@@ -76,8 +76,16 @@ def create_app(test_config=None):
         db.close_db()
 
         videos = []
-        for row in rows:
-            videos.append([x for x in row])
+
+        search_query = request.args.get("q")
+        print(search_query)
+        if search_query:
+            for row in rows:
+                if search_query in row["title"]:
+                    videos.append([x for x in row[:-1]])
+        else:
+            for row in rows:
+                videos.append([x for x in row])
         
         return jsonify(videos)
         
@@ -101,6 +109,7 @@ def create_app(test_config=None):
         db.close_db()
 
         return f"Video with ID {id} deleted"
+
     
     db.init_app(app)
 
