@@ -8,6 +8,8 @@ scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
+GCN_CHANNEL_ID = os.environ.get("GCN_CHANNEL_ID")
+GMTB_CHANNEL_ID = os.environ.get("GMTB_CHANNEL_ID")
 
 
 def create_app(test_config=None):
@@ -44,6 +46,7 @@ def create_app(test_config=None):
         search_response = youtube.search().list(
             q=search_filter,
             type="video",
+            channelId=GCN_CHANNEL_ID or GMTB_CHANNEL_ID,
             part="snippet",
             maxResults=10
         ).execute()
@@ -58,11 +61,10 @@ def create_app(test_config=None):
             "published_at":video["snippet"]["publishedAt"]
         } for video in items]
 
-        cursor = db.get_db().cursor()
         for video in videos:
             title = video["title"]
             published_at = video["published_at"]
-            cursor.execute("INSERT INTO Videos (title, published_at) VALUES (?,?)", (title, published_at))
+            db.execute_query("INSERT INTO Videos (title, published_at) VALUES (?,?)", (title, published_at))
         
         db.commit_db()
         db.close_db()
@@ -71,14 +73,12 @@ def create_app(test_config=None):
     
     @app.route("/videos", methods=["GET"])
     def getVideos():
-        cursor = db.get_db().cursor()
-        rows = cursor.execute("SELECT * FROM Videos").fetchall()
+        rows = db.execute_query("SELECT * FROM Videos").fetchall()
         db.close_db()
 
         videos = []
 
         search_query = request.args.get("q")
-        print(search_query)
         if search_query:
             for row in rows:
                 if search_query in row["title"]:
@@ -91,8 +91,7 @@ def create_app(test_config=None):
         
     @app.route("/videos/<id>", methods=["GET"])
     def getVideoByID(id):
-        cursor = db.get_db().cursor()
-        row = cursor.execute("SELECT * FROM Videos WHERE id = (?)", (id)).fetchone()
+        row = db.execute_query("SELECT * FROM Videos WHERE id = (?)", (id)).fetchone()
         db.close_db()
 
         if row:
@@ -103,8 +102,7 @@ def create_app(test_config=None):
         
     @app.route("/videos/<id>", methods=["DELETE"])
     def deleteVideo(id):
-        cursor = db.get_db().cursor()
-        row = cursor.execute("DELETE FROM Videos WHERE id = (?)", (id))
+        db.execute_query("DELETE FROM Videos WHERE id = (?)", (id))
         db.commit_db()
         db.close_db()
 
