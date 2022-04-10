@@ -31,6 +31,16 @@ def commit_db():
     db = get_db()
     db.commit()
 
+def execute_query(query, params=None):
+    db = get_db()
+    cursor = db.cursor()
+
+    if params:
+        return cursor.execute(query, params)
+    else:
+        return cursor.execute(query)
+
+
 @click.command("init-db")
 @with_appcontext
 def init_db_command():
