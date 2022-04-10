@@ -1,16 +1,5 @@
 import os
-from flask import Flask, request, jsonify
-from . import db
-
-from googleapiclient.discovery import build
-
-scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-
-
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
-GCN_CHANNEL_ID = os.environ.get("GCN_CHANNEL_ID")
-GMTB_CHANNEL_ID = os.environ.get("GMTB_CHANNEL_ID")
-
+from flask import Flask
 
 def create_app(test_config=None):
     # create and configure the app
@@ -33,83 +22,12 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    @app.route("/videos", methods=["POST"])
-    def postVideos():
-        youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-
-        search_filter_path = os.path.join(app.static_folder, "search_filter")
-        
-        with open(search_filter_path,"r") as f:
-            search_filter = f.read()
-            search_filter = search_filter.replace("\n","|")
-
-        search_response = youtube.search().list(
-            q=search_filter,
-            type="video",
-            channelId=GCN_CHANNEL_ID or GMTB_CHANNEL_ID,
-            part="snippet",
-            maxResults=10
-        ).execute()
-        
-        items = search_response["items"]
-        
-        if not items:
-            return "Error: No YouTube results"
-
-        videos = [{
-            "title": video["snippet"]["title"],
-            "published_at":video["snippet"]["publishedAt"]
-        } for video in items]
-
-        for video in videos:
-            title = video["title"]
-            published_at = video["published_at"]
-            db.execute_query("INSERT INTO Videos (title, published_at) VALUES (?,?)", (title, published_at))
-        
-        db.commit_db()
-        db.close_db()
-
-        return "Videos commited to SQLite Database"
     
-    @app.route("/videos", methods=["GET"])
-    def getVideos():
-        rows = db.execute_query("SELECT * FROM Videos").fetchall()
-        db.close_db()
-
-        videos = []
-
-        search_query = request.args.get("q")
-        if search_query:
-            for row in rows:
-                if search_query in row["title"]:
-                    videos.append([x for x in row[:-1]])
-        else:
-            for row in rows:
-                videos.append([x for x in row])
-        
-        return jsonify(videos)
-        
-    @app.route("/videos/<id>", methods=["GET"])
-    def getVideoByID(id):
-        row = db.execute_query("SELECT * FROM Videos WHERE id = (?)", (id)).fetchone()
-        db.close_db()
-
-        if row:
-            video = [x for x in row]
-            return jsonify(video)
-        else:
-            return f"Video with ID {id} not found"
-        
-    @app.route("/videos/<id>", methods=["DELETE"])
-    def deleteVideo(id):
-        db.execute_query("DELETE FROM Videos WHERE id = (?)", (id))
-        db.commit_db()
-        db.close_db()
-
-        return f"Video with ID {id} deleted"
-
+    from . import db
+    from . import videos
     
     db.init_app(app)
+    app.register_blueprint(videos.bp)
 
 
     return app
