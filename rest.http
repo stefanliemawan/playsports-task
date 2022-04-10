@@ -1,4 +1,4 @@
-POST http://localhost:5000/videos HTTP/1.1
+POST http://localhost:5000/videos/ HTTP/1.1
 content-type: application/json
 
 {}
@@ -9,7 +9,7 @@ GET http://localhost:5000/videos HTTP/1.1
 
 ###
 
-GET http://localhost:5000/videos?q=Adam HTTP/1.1
+GET http://localhost:5000/videos?q=Italia HTTP/1.1
 
 ###
 
