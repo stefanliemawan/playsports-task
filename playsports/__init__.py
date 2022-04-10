@@ -8,6 +8,8 @@ scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
+GCN_CHANNEL_ID = os.environ.get("GCN_CHANNEL_ID")
+GMTB_CHANNEL_ID = os.environ.get("GMTB_CHANNEL_ID")
 
 
 def create_app(test_config=None):
@@ -44,6 +46,7 @@ def create_app(test_config=None):
         search_response = youtube.search().list(
             q=search_filter,
             type="video",
+            channelId=GCN_CHANNEL_ID or GMTB_CHANNEL_ID,
             part="snippet",
             maxResults=10
         ).execute()
