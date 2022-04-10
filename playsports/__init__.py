@@ -62,7 +62,7 @@ def create_app(test_config=None):
         for video in videos:
             title = video["title"]
             published_at = video["published_at"]
-            cursor.execute("INSERT INTO videos (title, published_at) VALUES (?,?)", (title, published_at))
+            cursor.execute("INSERT INTO Videos (title, published_at) VALUES (?,?)", (title, published_at))
         
         db.commit_db()
         db.close_db()
@@ -72,7 +72,7 @@ def create_app(test_config=None):
     @app.route("/videos", methods=["GET"])
     def getVideos():
         cursor = db.get_db().cursor()
-        rows = cursor.execute("SELECT * FROM videos").fetchall()
+        rows = cursor.execute("SELECT * FROM Videos").fetchall()
         db.close_db()
 
         videos = []
@@ -84,13 +84,23 @@ def create_app(test_config=None):
     @app.route("/videos/<id>", methods=["GET"])
     def getVideoByID(id):
         cursor = db.get_db().cursor()
-        row = cursor.execute("SELECT * FROM videos WHERE id = (?)",(id)).fetchone()
+        row = cursor.execute("SELECT * FROM Videos WHERE id = (?)", (id)).fetchone()
         db.close_db()
-        
-        video = [x for x in row]
 
-        return jsonify(video)
+        if row:
+            video = [x for x in row]
+            return jsonify(video)
+        else:
+            return f"Video with ID {id} not found"
         
+    @app.route("/videos/<id>", methods=["DELETE"])
+    def deleteVideo(id):
+        cursor = db.get_db().cursor()
+        row = cursor.execute("DELETE FROM Videos WHERE id = (?)", (id))
+        db.commit_db()
+        db.close_db()
+
+        return f"Video with ID {id} deleted"
     
     db.init_app(app)
 
